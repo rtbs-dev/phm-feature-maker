@@ -2,11 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="671c9f9b-47f6-40f2-9450-77ad38ce9948" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/pomegranate_hmm.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/misc.xml" afterPath="$PROJECT_DIR$/.idea/misc.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.ipynb_checkpoints/sandbox-checkpoint.ipynb" afterPath="$PROJECT_DIR$/.ipynb_checkpoints/sandbox-checkpoint.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sandbox.ipynb" afterPath="$PROJECT_DIR$/sandbox.ipynb" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pomegranate_hmm.ipynb" afterPath="$PROJECT_DIR$/pomegranate_hmm.ipynb" />
     </list>
     <ignored path="phm-feature-maker.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -338,7 +335,14 @@
       <option name="project" value="LOCAL" />
       <updated>1508726052984</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="hew hmm progress NB">
+      <created>1510094446948</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1510094446948</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -382,7 +386,8 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="first commit&#10;" />
-    <option name="LAST_COMMIT_MESSAGE" value="first commit&#10;" />
+    <MESSAGE value="hew hmm progress NB" />
+    <option name="LAST_COMMIT_MESSAGE" value="hew hmm progress NB" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager />
