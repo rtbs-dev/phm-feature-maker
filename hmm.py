@@ -3,29 +3,12 @@ import numpy as np
 import pomegranate as pg
 import pandas as pd
 from itertools import compress
-
-def fit_symbol_model(s, **kwargs):
-    """
-    used to discretize the system behavior in to a set of "symbols".
-    Original signal bounds are determined with kmeans, and state trainsitions
-    are estimated via Baum-Welch algorithm.
-
-    :param s: list of pd.Series objects, that contains a given sensor signal
-        (optionally for multiple separate observation periods)
-    :param n_comp: how many symbols/states the system is assumed to have.
-    :return: pg.HiddenMarkovModel(), trained on the observed sensors.
-    """
-
-    base_kwargs = {
-        'verbose': True,
-        'n_jobs': 4,
-        'n_components': 3
-    }
-    base_kwargs.update(kwargs)
-
-    model = pg.HiddenMarkovModel.from_samples(pg.NormalDistribution,
-                                              X=[s], **base_kwargs)
-    return model
+import os
+from sklearn.preprocessing import StandardScaler
+import matplotlib.pyplot as plt
+from tqdm import tqdm
+from scipy import stats
+import pickle
 
 
 class RollingHMM(object):
@@ -76,20 +59,131 @@ class RollingHMM(object):
         return self.model
 
     def fit(self, **kwargs):
-        print('Parsing sub-sequences...')
+        # print('Parsing sub-sequences...')
         r = self.s.rolling(self.window)
         r.apply(self.rolling_store)
-        print(f'Parsed {len(self.sequences)} state sequences...')
+        # print(f'Parsed {len(self.sequences)} state sequences...')
         nans = np.logical_not([np.any(np.isnan(i)) for i in self.sequences])
         self.sequences = list(compress(self.sequences, nans))
-        print(f'removed {sum(nans)} NaN sequences...')
+        # print(f'removed {sum(nans)} NaN sequences...')
         X = list(compress(self.sequences, self.mask))
-        print(f'Using {sum(self.mask)} Non-anomalous sequences;\n Training HMM...')
+        # print(f'Using {sum(self.mask)} Non-anomalous sequences;\n Training HMM...')
         self.train(X, **kwargs)
-        print("Done!")
+        # print("Done!")
         return self.model
 
 
     def like(self):
         r = self.s.rolling(self.window)
         return r.apply(self.model.log_probability)
+
+    def unsupervised_anom(self):
+        p = self.like()
+        n_anom = int(self.target.sum())
+        min_idx = np.argpartition(p, n_anom)[:n_anom]
+        return self.s.iloc[min_idx]
+
+    def rmse(self):
+        pred = self.unsupervised_anom().sort_index().index.values
+        actual = self.target[self.target == 1].sort_index().index.values
+        return np.sqrt((np.array([i.item()*1e-13 for i in (pred-actual)])**2).mean())
+
+
+class TurbineAnomalyHMM(object):
+
+    def __init__(self, data_dir):
+        self.dir = data_dir
+        self.ref = pd.read_excel(os.path.join(data_dir, 'GroundTruths.xlsx'),
+                            names=['file', 'date_time'])
+        self.ref.date_time = pd.to_datetime(self.ref.date_time)
+
+        if not os.path.isfile(os.path.join(data_dir, 'completeDB.h5')):
+            print('reading in...')
+            df = pd.concat([pd.read_csv(os.path.join(data_dir, 'data_6302.csv'),
+                                        index_col=0, parse_dates=True),
+                            pd.read_csv(os.path.join(data_dir, 'data_7600.csv'),
+                                        index_col=0, parse_dates=True),
+                            pd.read_csv(os.path.join(data_dir, 'data_7664.csv'),
+                                        index_col=0, parse_dates=True)])
+            print('creating h5...')
+            df.to_hdf(os.path.join(data_dir, 'completeDB.h5'))
+            print('done!')
+        else:
+            print('reading h5...')
+            df = pd.read_hdf(os.path.join(data_dir, 'completeDB.h5'))
+            print('done!')
+
+        ## normalize the data
+        scale = StandardScaler()
+        df_n = scale.fit_transform(df.loc[:, 'T_1':'T_27'].values)
+        df_n = pd.DataFrame(data=df_n, index=df.index, columns=df.loc[:, 'T_1':'T_27'].columns)
+
+        ## Up-sample the data; remove noise
+        # TODO: Swinging Door Alg.
+        compress_window = '3h'
+        dfr = df_n.resample(compress_window).median()
+        dfr = dfr[dfr.abs() < 3]
+        self.dfr = dfr.dropna()
+
+        ## define the anomaly times
+        target = pd.Series(index=df_n.index, data=0)
+        target[np.isin(df_n.index, self.ref.date_time)] = 1
+
+        ## Up-sample the anomaly times
+        target = target.resample(compress_window).max()
+        self.target = target[dfr.index]
+
+    def signal_plot(self, kind='raw'):
+
+        plt.figure(figsize=(15, 15))
+        if kind is 'mean':
+            for i, (name, sig) in enumerate(self.dfr.loc[:,'T_1':].iteritems()):
+                plt.plot(self.dfr.loc[:,'T_1':].mean(axis=1) - sig+0.1*i, 'k')
+            plt.vlines(self.ref[self.ref.file==6302].date_time.values, 0, 2.6, color='r', alpha=.5)
+            plt.title('signal deviation from mean')
+            plt.yticks(np.arange(0,2.8, .1), self.dfr.loc[:,'T_1':].columns )
+        else:
+            for i, (name, sig) in enumerate(self.dfr.iteritems()):
+                plt.plot(sig + self.dfr.max().max() * i, 'k')
+            plt.vlines(self.ref.date_time.values, 0, 27 * self.dfr.max(), color='r', alpha=.5)
+            plt.title('signal')
+            plt.yticks(np.arange(0, 27 * self.dfr.max().max(), self.dfr.max().max()), self.dfr.columns)
+            plt.ylim(-.1, 27 * self.dfr.max().max() + .1)
+
+    def objective(self, x):
+        experiment = {}
+        print(x)
+        anomaly_window, n_states = int(x[0, 0]), int(x[0, 1])
+        for sensor, signal in tqdm(self.dfr.items()):
+            print(sensor)
+            experiment[sensor] = RollingHMM(signal, n_states, self.target, anomaly_window=f'{anomaly_window}h')
+            experiment[sensor].fit(verbose=False)
+
+        print('HI')
+        rmse = {n: i.rmse() for n, i in experiment.items()}
+        obj = stats.hmean(np.array(list(rmse.values())))
+        case_study_fname = f'o{obj:.1f}w{anomaly_window}s{n_states}_optHMM.pkl'
+        print('saving iteration HMM pkl...')
+        with open(os.path.join(self.dir, 'results', case_study_fname), 'wb') as f:
+            pickle.dump(experiment, f)
+        print('done!')
+        return obj
+
+    def optimize(self, domain, max_iter):
+        import GPyOpt
+        myBopt = GPyOpt.methods.BayesianOptimization(f=self.objective,  # Objective function
+                                                     domain=domain,  # Box-constrains of the problem
+                                                     acquisition_type='EI',  # Expected Improvement
+                                                     exact_feval=False,
+                                                     evaluator_type='local_penalization')
+        myBopt.run_optimization(max_iter)
+        return myBopt
+
+
+if __name__ == "__main__":
+    data_dir = os.path.join('.', 'data')
+    study = TurbineAnomalyHMM(data_dir)
+    domain = [{'name': 'anomaly_window', 'type': 'discrete', 'domain': (6, 24)},
+              {'name': 'n_states', 'type': 'discrete', 'domain': (3, 10)}]  # armed bandit with the locations
+    study.optimize(domain, 3)
+    print('done!')
