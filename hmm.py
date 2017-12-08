@@ -8,6 +8,7 @@ from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from scipy import stats
+from scipy import signal
 import pickle
 
 
@@ -78,20 +79,31 @@ class RollingHMM(object):
         return r.apply(self.model.log_probability)
 
     def unsupervised_anom(self):
-        p = self.like()
+        l = self.like()
+        # if np.any(l.isna()):
+        #     return 'NaN'
+
+        # p = l.rolling(self.window).min().drop_duplicates()
+        # dp = p.diff()
         n_anom = int(self.target.sum())
-        min_idx = np.argpartition(p, n_anom)[:n_anom]
-        return self.s.iloc[min_idx]
+        # # print(dp)
+        # min_idx = np.argpartition(dp, n_anom)[:n_anom]
+        # return dp.iloc[min_idx]
+        min_idx = np.argpartition(l, n_anom)[:n_anom]
+        return l.iloc[min_idx]
 
     def rmse(self):
-        pred = self.unsupervised_anom().sort_index().index.values
+        anom = self.unsupervised_anom()
+        # if anom is 'NaN':
+        #     return 10000.
+        pred = anom.sort_index().index.values
         actual = self.target[self.target == 1].sort_index().index.values
         return np.sqrt((np.array([i.item()*1e-13 for i in (pred-actual)])**2).mean())
 
 
 class TurbineAnomalyHMM(object):
 
-    def __init__(self, data_dir):
+    def __init__(self, data_dir, compress_window='3h'):
         self.dir = data_dir
         self.ref = pd.read_excel(os.path.join(data_dir, 'GroundTruths.xlsx'),
                             names=['file', 'date_time'])
@@ -120,7 +132,7 @@ class TurbineAnomalyHMM(object):
 
         ## Up-sample the data; remove noise
         # TODO: Swinging Door Alg.
-        compress_window = '3h'
+        # compress_window = '3h'
         dfr = df_n.resample(compress_window).median()
         dfr = dfr[dfr.abs() < 3]
         self.dfr = dfr.dropna()
@@ -131,7 +143,7 @@ class TurbineAnomalyHMM(object):
 
         ## Up-sample the anomaly times
         target = target.resample(compress_window).max()
-        self.target = target[dfr.index]
+        self.target = target[self.dfr.index]
 
     def signal_plot(self, kind='raw'):
 
@@ -139,7 +151,7 @@ class TurbineAnomalyHMM(object):
         if kind is 'mean':
             for i, (name, sig) in enumerate(self.dfr.loc[:,'T_1':].iteritems()):
                 plt.plot(self.dfr.loc[:,'T_1':].mean(axis=1) - sig+0.1*i, 'k')
-            plt.vlines(self.ref[self.ref.file==6302].date_time.values, 0, 2.6, color='r', alpha=.5)
+            plt.vlines(self.ref.date_time.values, 0, 2.6, color='r', alpha=.5)
             plt.title('signal deviation from mean')
             plt.yticks(np.arange(0,2.8, .1), self.dfr.loc[:,'T_1':].columns )
         else:
@@ -155,35 +167,41 @@ class TurbineAnomalyHMM(object):
         print(x)
         anomaly_window, n_states = int(x[0, 0]), int(x[0, 1])
         for sensor, signal in tqdm(self.dfr.items()):
-            print(sensor)
+            # print(sensor)
             experiment[sensor] = RollingHMM(signal, n_states, self.target, anomaly_window=f'{anomaly_window}h')
             experiment[sensor].fit(verbose=False)
 
-        print('HI')
-        rmse = {n: i.rmse() for n, i in experiment.items()}
+        # print('HI')
+        rmse = {n: i.rmse() for n, i in list(experiment.items())}
         obj = stats.hmean(np.array(list(rmse.values())))
         case_study_fname = f'o{obj:.1f}w{anomaly_window}s{n_states}_optHMM.pkl'
-        print('saving iteration HMM pkl...')
+        # print('saving iteration HMM pkl...')
         with open(os.path.join(self.dir, 'results', case_study_fname), 'wb') as f:
             pickle.dump(experiment, f)
-        print('done!')
+        # print('done!')
         return obj
 
     def optimize(self, domain, max_iter):
         import GPyOpt
         myBopt = GPyOpt.methods.BayesianOptimization(f=self.objective,  # Objective function
                                                      domain=domain,  # Box-constrains of the problem
-                                                     acquisition_type='EI',  # Expected Improvement
                                                      exact_feval=False,
-                                                     evaluator_type='local_penalization')
+                                                     # X=X, Y=Y,
+                                                     initial_design_type='latin',
+                                                     # num_cores=4,
+                                                     model_type='GP',
+                                                     acquisition_type='LCB')
         myBopt.run_optimization(max_iter)
         return myBopt
 
 
 if __name__ == "__main__":
     data_dir = os.path.join('.', 'data')
-    study = TurbineAnomalyHMM(data_dir)
-    domain = [{'name': 'anomaly_window', 'type': 'discrete', 'domain': (6, 24)},
-              {'name': 'n_states', 'type': 'discrete', 'domain': (3, 10)}]  # armed bandit with the locations
-    study.optimize(domain, 3)
+    study = TurbineAnomalyHMM(data_dir, compress_window='4h')
+    domain = [{'name': 'anomaly_window', 'type': 'discrete', 'domain': range(8, 49)},
+              {'name': 'n_states', 'type': 'discrete', 'domain': range(3, 11)}]
+    myBopt = study.optimize(domain, 20)
+    myBopt.plot_acquisition(filename='acq.png')
+    myBopt.plot_convergence(filename='conv.png')
+
     print('done!')
