@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="671c9f9b-47f6-40f2-9450-77ad38ce9948" name="Default" comment="hyperparameter search underway">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/acq.png" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/conv.png" />
+    <list default="true" id="671c9f9b-47f6-40f2-9450-77ad38ce9948" name="Default" comment="">
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/clf.png" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hmm.py" afterPath="$PROJECT_DIR$/hmm.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/tutorial.ipynb" afterPath="$PROJECT_DIR$/tutorial.ipynb" />
     </list>
     <ignored path="phm-feature-maker.iws" />
@@ -34,7 +32,7 @@
         <entry file="file://$PROJECT_DIR$/hmm.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="464">
-              <caret line="128" column="32" lean-forward="true" selection-start-line="128" selection-start-column="32" selection-end-line="128" selection-end-column="32" />
+              <caret line="128" column="32" lean-forward="false" selection-start-line="128" selection-start-column="32" selection-end-line="128" selection-end-column="32" />
               <folding>
                 <element signature="e#24#42#0" expanded="true" />
               </folding>
@@ -414,7 +412,14 @@
       <option name="project" value="LOCAL" />
       <updated>1512686109211</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="hyperparameter search done.">
+      <created>1512767363525</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1512767363525</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -462,7 +467,8 @@
     <MESSAGE value="hew hmm progress NB" />
     <MESSAGE value="working prototype" />
     <MESSAGE value="hyperparameter search underway" />
-    <option name="LAST_COMMIT_MESSAGE" value="hyperparameter search underway" />
+    <MESSAGE value="hyperparameter search done." />
+    <option name="LAST_COMMIT_MESSAGE" value="hyperparameter search done." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -569,7 +575,7 @@
     <entry file="file://$PROJECT_DIR$/hmm.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="464">
-          <caret line="128" column="32" lean-forward="true" selection-start-line="128" selection-start-column="32" selection-end-line="128" selection-end-column="32" />
+          <caret line="128" column="32" lean-forward="false" selection-start-line="128" selection-start-column="32" selection-end-line="128" selection-end-column="32" />
           <folding>
             <element signature="e#24#42#0" expanded="true" />
           </folding>
