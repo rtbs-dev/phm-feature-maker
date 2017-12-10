@@ -1,0 +1,43 @@
+\documentclass[twocolumn,10pt]{article}
+\usepackage[utf8]{inputenc}
+
+\usepackage{lipsum}
+\usepackage{geometry}
+
+
+\usepackage[pdftex]{graphicx}
+% declare the path(s) where your graphic files are
+\graphicspath{{./img/}}
+
+\title{Feature Learning for Gas Turbine Anomalies (Placeholder)}
+\author{Thurston Sexton \& Connor Armstrong}
+\date{December 15, 2017}
+
+\begin{document}
+\maketitle
+
+
+
+
+\section{Pre-intro}
+\section{Introduction}\label{sec:intro}
+\lipsum[2]\cite{gas_turbine}
+this is a test of the citation auto-complete system Fig.~\ref{blah}.
+\lipsum[1]\cite{kmean} Section~\ref{sec:intro}
+\subsection{Images?}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=.8\linewidth]{img/test.jpg}
+    \caption{THIS IS A JPEG}
+    \label{blah}
+\end{figure}
+
+New~York
+
+
+
+
+\bibliographystyle{ieeetr}
+\bibliography{biblio}
+\end{document}

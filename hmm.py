@@ -168,13 +168,13 @@ class TurbineAnomalyHMM(object):
         anomaly_window, n_states = int(x[0, 0]), int(x[0, 1])
         for sensor, signal in tqdm(self.dfr.items()):
             # print(sensor)
-            experiment[sensor] = RollingHMM(signal, n_states, self.target, anomaly_window=f'{anomaly_window}h')
+            experiment[sensor] = RollingHMM(signal, n_states, self.target, anomaly_window='{}h'.format(anomaly_window))
             experiment[sensor].fit(verbose=False)
 
         # print('HI')
         rmse = {n: i.rmse() for n, i in list(experiment.items())}
         obj = stats.hmean(np.array(list(rmse.values())))
-        case_study_fname = f'o{obj:.1f}w{anomaly_window}s{n_states}_optHMM.pkl'
+        case_study_fname = 'o{:.1f}w{}s{}_optHMM.pkl'.format(obj, anomaly_window, n_states)
         # print('saving iteration HMM pkl...')
         with open(os.path.join(self.dir, 'results', case_study_fname), 'wb') as f:
             pickle.dump(experiment, f)

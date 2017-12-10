@@ -1,0 +1,65 @@
+\documentclass[twocolumn,10pt]{article}
+\usepackage[utf8]{inputenc}
+
+\usepackage{lipsum}
+\usepackage[top=1in, bottom=1in, left=1in, right=1in]{geometry}
+\usepackage[numbers]{natbib}
+
+
+\usepackage[pdftex]{graphicx}
+% declare the path(s) where your graphic files are
+\graphicspath{{./img/}}
+
+\title{State-based Markov Feature Learning for Gas Turbine Anomalies}
+\author{Thurston Sexton \& Connor Armstrong}
+\date{December 15, 2017}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+1 paragraph talking about gas turbines and/or anomalies in them. Bring up why ``feature learning" is useful. (this is basically just re-wording what Kang has in his project description. 
+
+\subsection{Existing literature}
+List any major feature learning and/or prediction approaches out there that might specifically apply to sensor/turbine anomaly prediction. We want to end up talking about the methodology in \citep{gas_turbine} and how we're extending it. e.g: 
+
+As discussed in \citet{gas_turbine}, Hidden Markov Models (HMMs) can be used for turbine anomaly detection in either unsupervised or supervised settings, by encoding a wide range of system behavior through state transition probabilities. Knowing that turbines are going to have particular ``states" like ``on" or ``off" or ``warming", along with how we expect the states to transition from one to another, lets us directly encode that information into a HMM's network. However, using HMM models this way generally requires specific domain knowledge about ``useful" parameters, like \textit{how many states exist for this system?}, or perhaps more importantly, \textit{what time-scale do anomalies occur in for this system?}
+
+\subsection{Project Overview}
+In this project, we propose a method to extend the work of \citet{gas_turbine}, by automatically determining optimal settings for a HMM that is able to 1) model the overall system behavior in a human-interpretable way, and 2) predict the occurrence of anomalies in both a supervised and unsupervised way. 
+This will be achieved through 
+\begin{enumerate}
+    \item Automatic extraction of state emission probabilities by clustering observed temperature sensor records
+    \item Determining optimally-predictive sequence-time windows and number of system states through Bayesian Optimization, and
+    \item transformation of the original features into a ``probability feature-space", which can be used for supervised or unsupervised anomaly detection. 
+\end{enumerate}
+
+This methodology will be demonstrated through application to detecting anomalies in a real data-set.
+
+\subsection{Terms I don't know if we need anymore}
+
+\subsubsection{Support Vector Machine}\cite{SVM}
+The Support Vector Machine (SVM) is a commonly used binary-classification tool. A pure, hard-margin SVM is ideal for data that is linearly separable. However we didn't really use this, did we?
+
+\subsubsection{Singular Value Decomposition}
+Singular Value Decomposition (SVD) is a method of data dimensional reduction. It's useful, but I don't know how relevant it's going to be if we use the ``swinging door" compression thing.
+
+\subsubsection{Principle Component Analysis}
+Did we use this for anything other than justification? Is it worth talking about anymore?
+
+\subsection{K means clustering}\label{sec:kmeans}
+K-Means Clustering is a useful tool for classifying unlabeled data based. Classification is based upon a user-selected number of clusters ``K" data will be classified into. The number of clusters ``K" is associated with the number of visible \textbf{symbols/states}\footnote{from here on ``symbols" will be used}. Simple classification, first discussed by Lloyd, is based upon constant optimization of cluster centriods \cite{pcm} . Unfortunately, this makes K-Means susceptible to noise. For the purposes of this investigation, K-Means Clustering is implemented when using both Gaussian Mixture Models (Section \ref{sec:gmm}) as well as Hidden Markov Models (Section ~\ref{sec:hmm}).
+
+\subsection{Gaussian Mixture Model}\label{sec:gmm}
+When working with functions such as Fig. (normalized temperature density), it can be useful to interpret them as the sum of Multiple Gaussian distributions. The generated Gaussian components of the function are referred to as ``modes". Mode density must be selected carefully, as too few will result in underfitting, whereas too many will overfit the sum. To preclude this, components can be be dynamically added or removed depending upon their relevance to updating data \cite{GMM}.
+
+The number of modes in a function can be considered the number of visible symbols, and is used as the ``K" value as discussed in Section \ref{sec:kmeans}. Creation of discrete modes is shown to be an effective means of separating data by Zivkovic through image processing applications \cite{GMM}.
+Computing the appropriate number of visible symbols will be discussed in Section \ref{sec:}.
+
+\subsection{Hidden Markov Model}\label{sec:hmm}
+
+
+
+\bibliographystyle{plainnat}
+\bibliography{biblio}
+\end{document}
