@@ -145,22 +145,25 @@ class TurbineAnomalyHMM(object):
         target = target.resample(compress_window).max()
         self.target = target[self.dfr.index]
 
-    def signal_plot(self, kind='raw'):
-
-        plt.figure(figsize=(15, 15))
+    def signal_plot(self, kind='raw', ax=None):
+        
+        if ax is None:
+            f,ax = plt.subplots(figsize=(15, 15))
         if kind is 'mean':
-            for i, (name, sig) in enumerate(self.dfr.loc[:,'T_1':].iteritems()):
-                plt.plot(self.dfr.loc[:,'T_1':].mean(axis=1) - sig+0.1*i, 'k')
-            plt.vlines(self.ref.date_time.values, 0, 2.6, color='r', alpha=.5)
-            plt.title('signal deviation from mean')
-            plt.yticks(np.arange(0,2.8, .1), self.dfr.loc[:,'T_1':].columns )
+            for i, (name, sig) in enumerate(self.dfr.iteritems()):
+                ax.plot(self.dfr.mean(axis=1) - sig+0.1*i, 'k')
+            ax.vlines(self.ref.date_time.values, 0, 2.6, color='r', alpha=.5)
+            ax.set_title('signal deviation from mean')
+            ax.set_yticks(np.arange(0,2.8, .1))
+            ax.set_yticklabels(self.dfr.columns )
         else:
             for i, (name, sig) in enumerate(self.dfr.iteritems()):
-                plt.plot(sig + self.dfr.max().max() * i, 'k')
-            plt.vlines(self.ref.date_time.values, 0, 27 * self.dfr.max(), color='r', alpha=.5)
-            plt.title('signal')
-            plt.yticks(np.arange(0, 27 * self.dfr.max().max(), self.dfr.max().max()), self.dfr.columns)
-            plt.ylim(-.1, 27 * self.dfr.max().max() + .1)
+                ax.plot(sig + self.dfr.max().max() * i, 'k')
+            ax.vlines(self.ref.date_time.values, 0, 27 * self.dfr.max(), color='r', alpha=.5)
+            ax.set_title('signal')
+            ax.set_yticks(np.arange(0, 27 * self.dfr.max().max(), self.dfr.max().max()))
+            ax.set_yticklabels(self.dfr.columns)
+            ax.set_ylim(-.1, 27 * self.dfr.max().max() + .1)
 
     def objective(self, x):
         experiment = {}
