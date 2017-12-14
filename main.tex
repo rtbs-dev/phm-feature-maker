@@ -18,10 +18,17 @@
 \maketitle
 
 \section{Introduction}
-1 paragraph talking about gas turbines and/or anomalies in them. Bring up why ``feature learning" is useful. (this is basically just re-wording what Kang has in his project description. 
+
+Gas turbines are the beating hearts of modern industry, by converting a variety of fuels to electrical current they are capable of producing up to 225 MW of power. These incredibly complicated systems are vital to the function of factories and homes, meaning any unscheduled downtime is unacceptable. Traditionally, the most popular way to identify turbine anomalies is monitoring exhaust gas temperatures (EGTs) exiting combustion chambers. Traditional approaches are reliant upon rigid handcrafted features derived from prior engineering knowledge. Knowledge-based features are hindered by poor predictive performance, and crafting "good" features is an extremely time-consuming manual process. Improving the versatility and accuracy of anomaly detection requires a feature learning solution capable of autonomously creating efficient features from raw data. 
+
+%1 paragraph talking about gas turbines and/or anomalies in them. Bring up why ``feature learning" is useful. (this is basically just re-wording what Kang has in his project description. 
 
 \subsection{Existing literature}
-List any major feature learning and/or prediction approaches out there that might specifically apply to sensor/turbine anomaly prediction. We want to end up talking about the methodology in \citep{gas_turbine} and how we're extending it. e.g: 
+%List any major feature learning and/or prediction approaches out there that might specifically apply to sensor/turbine anomaly prediction. We want to end up talking about the methodology in \citep{gas_turbine} and how we're extending it. e.g: 
+
+Previous studies on anomaly detection in gas turbines have investigated the effectiveness of supervised and unsupervised prediction methods on fixed data sets; however feature learning is rarely discussed \cite{yan2015}. 
+
+A prior gas turbine study by \citet{yan2015} used unsupervised feature learning to create inputs for an extreme learning model (ELM) used for anomaly detection. Feature learning was facilitated using a stacked denoising autoencoder (SDAE); a deep learning structure which has a denoising autoencoder (DAE) for shallow learning blocks. DAEs are a variant of the traditional auto-encoder. AEs consist of an encoder and decoder component. An encoder function maps inputs to hidden representations, whereas a decoder function maps those hidden representations to a reconstruction \cite{yan2015}. DAEs rely upon the predetermin AE activation function to classify features
 
 As discussed in \citet{gas_turbine}, Hidden Markov Models (HMMs) can be used for turbine anomaly detection in either unsupervised or supervised settings, by encoding a wide range of system behavior through state transition probabilities. Knowing that turbines are going to have particular ``states" like ``on" or ``off" or ``warming", along with how we expect the states to transition from one to another, lets us directly encode that information into a HMM's network. However, using HMM models this way generally requires specific domain knowledge about ``useful" parameters, like \textit{how many states exist for this system?}, or perhaps more importantly, \textit{what time-scale do anomalies occur in for this system?}
 
@@ -36,6 +43,50 @@ This will be achieved through
 
 This methodology will be demonstrated through application to detecting anomalies in a real data-set.
 
+\section{Modeling Sensors as State Sequences}
+To learn useful features for time-series data, it is necessary to make some assumptions about how the time-series is structured. For example, using wavelet transforms (CITE Kang's stuff??) implies a frequency-cutoff assumption to restrict the feature domain size. The goal of \textit{feature learning} is to minimize the number of assumptions required to get ``useful" features for prediction -- i.e. to prevent \textit{feature engineering}. We propose that, by only assuming that there exist separate ``operational states" of the system, that it is possible to learn features derived from sequences of these states. This is accomplished through the use of Hidden Markov models, to map the observed sensor values to one of the ``hidden" states. These mappings can then be used to determine the relative probability of some given sequence of states, based on what has been observed before.
+
+One way to view this HMM mapping of continuous sensor measurements to sequences of states is as a Mixture Model, where each component of the mixture represents one of the ``states" the system can be in, with each component's distribution representing the ``emmission probability" of sensor values while in that state. These components are then related through a transition probability matrix, which allows the system to shift into different components of the mixture model over time. 
+
+\subsection{Gaussian Mixture Model}\label{sec:gmm}
+The generated Gaussian components of the function are referred to as ``modes". Mode density must be selected carefully, as too few will result in under-fitting, whereas too many will over-fit the sum. To preclude this, components can be be dynamically added or removed depending upon their relevance to updating data \cite{GMM}. Creation of discrete modes is shown to be an effective means of separating data by Zivkovic through image processing applications \cite{GMM}.
+
+It now remains to determine the transition probability matrix, which is done by observing sequences of visible states through either Vitterbi or Baum-Welch algorithms
+
+
+\subsection{Vitterbi vs Baum-Welch algorithms}
+here we (very briefly) mention the two ways to train HMM's from observations. We ultimately used Baum-welch as implemented in Pomegranate.\citep{pomegranate}
+
+\subsection{HMM State Prediction}
+here we will plot the example breakdown of some sensor signal into states (maybe a sensor time-series colored by the predicted HMM state?)
+
+\section{Learned Probability Features }
+To prevent engineering the parameters of the HMM, we pose the feature learning problem as an optimization problem: the minimization of loss over the space of hyperparameter values. Because training multiple HMM's (one for each sensor) is somewhat computationally costly, we use Bayesian Optimization (BO) to minimize the loss. 
+
+\section{Results}
+
+\subsection{Unsupervised}
+Things lag...our predictions are consistently behind/just after the actual occurrence of anomaly, Fig.~\ref{fig:unsupervised}. This does mean we are learning some deeper, useful abstraction of the system behavior, but we need to re-parametrize or redefine our objective function so that things are predicted at the right time...
+\begin{figure*}
+    \centering
+    \includegraphics[width=\linewidth]{unsupervised.png}
+    \caption{Markers indicate top-N predicted anomalies occurring at this time, where N is the true number of observed anomalies. }
+    \label{fig:unsupervised}
+\end{figure*}
+
+\subsection{Supervised}
+Use the probability features as input into a decision tree or SVM, instead of the original sensor data. We will do cross-validation, but making sure the "training" sets are always time-points \textit{before} the test sets. See how well that does? Fig.~\ref{fig:supervised} 
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{clf.png}
+    \caption{Accuracy scores of Decision-tree model, over 30 time-series-splits used for cross-validation. }
+    \label{fig:supervised}
+\end{figure}
+It does OK...more do well, but more do poorly too. This indicates there is some minimum amount of time the model needs before the probabilities are useful. This model either does great or terrible, while before it was a whole lot of mediocre. 
+
+\section{DEFINITION STUFF}
+I just put things you had into a section to be sorted later. 
 \subsection{Terms I don't know if we need anymore}
 
 \subsubsection{Support Vector Machine}\cite{SVM}
@@ -48,13 +99,13 @@ Singular Value Decomposition (SVD) is a method of data dimensional reduction. It
 Did we use this for anything other than justification? Is it worth talking about anymore?
 
 \subsection{K means clustering}\label{sec:kmeans}
-K-Means Clustering is a useful tool for classifying unlabeled data based. Classification is based upon a user-selected number of clusters ``K" data will be classified into. The number of clusters ``K" is associated with the number of visible \textbf{symbols/states}\footnote{from here on ``symbols" will be used}. Simple classification, first discussed by Lloyd, is based upon constant optimization of cluster centriods \cite{pcm} . Unfortunately, this makes K-Means susceptible to noise. For the purposes of this investigation, K-Means Clustering is implemented when using both Gaussian Mixture Models (Section \ref{sec:gmm}) as well as Hidden Markov Models (Section ~\ref{sec:hmm}).
+K-Means Clustering is a useful tool for classifying unlabeled data based. Classification is based upon a user-selected number of clusters ``K" data will be classified into. The number of clusters ``K" is associated with the number of visible \textbf{symbols/states}\footnote{from here on ``symbols" will be used}. Simple classification, first discussed by Lloyd, is based upon constant optimization of cluster centroids \cite{pcm} . Unfortunately, this makes K-Means susceptible to noise. For the purposes of this investigation, K-Means Clustering is implemented when using both Gaussian Mixture Models (Section \ref{sec:gmm}) as well as Hidden Markov Models (Section ~\ref{sec:hmm}).
 
 \subsection{Gaussian Mixture Model}\label{sec:gmm}
-When working with functions such as Fig. (normalized temperature density), it can be useful to interpret them as the sum of Multiple Gaussian distributions. The generated Gaussian components of the function are referred to as ``modes". Mode density must be selected carefully, as too few will result in underfitting, whereas too many will overfit the sum. To preclude this, components can be be dynamically added or removed depending upon their relevance to updating data \cite{GMM}.
+When working with functions such as Fig. (normalized temperature density), it can be useful to interpret them as the sum of Multiple Gaussian distributions. The generated Gaussian components of the function are referred to as ``modes". Mode density must be selected carefully, as too few will result in under-fitting, whereas too many will over-fit the sum. To preclude this, components can be be dynamically added or removed depending upon their relevance to updating data \cite{GMM}.
 
 The number of modes in a function can be considered the number of visible symbols, and is used as the ``K" value as discussed in Section \ref{sec:kmeans}. Creation of discrete modes is shown to be an effective means of separating data by Zivkovic through image processing applications \cite{GMM}.
-Computing the appropriate number of visible symbols will be discussed in Section \ref{sec:}.
+Computing the appropriate number of visible symbols will be discussed in Section.
 
 \subsection{Hidden Markov Model}\label{sec:hmm}
 
